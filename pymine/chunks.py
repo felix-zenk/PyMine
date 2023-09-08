@@ -163,6 +163,14 @@ class World:
 
         return chunk_index + chunk_data
 
+    @property
+    def non_empty_chunks(self):
+        return list(filter(lambda chunk: not isinstance(chunk, EmptyChunk), self.chunks))
+
+    @property
+    def empty_chunks(self):
+        return list(filter(lambda chunk: isinstance(chunk, EmptyChunk), self.chunks))
+
     @staticmethod
     def global_to_chunk_position(position: Position) -> tuple[Position, Position]:
         chunk_position = Position(
