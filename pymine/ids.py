@@ -1,8 +1,8 @@
-from enum import unique, IntEnum
+BlockID = int
+BiomeID = int
 
 
-@unique
-class BlockId(IntEnum):
+class BlockIDs(object):
     AIR = 0
     STONE = 1
     GRASS_BLOCK = 2
@@ -256,12 +256,8 @@ class BlockId(IntEnum):
     BID_254 = 254
     BID_255 = 255
 
-    def __repr__(self):
-        return f'{self.__class__.__name__}.{self.name}'
 
-
-@unique
-class BiomeId(IntEnum):
+class BiomeIDs(object):
     BID_0 = 0
     BID_8 = 8
     BID_16 = 16

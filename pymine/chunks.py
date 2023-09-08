@@ -7,10 +7,10 @@ from os import PathLike
 from pathlib import Path
 from typing import NamedTuple
 
-from .ids import BlockId, BiomeId
+from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID
 
 Position = NamedTuple('Position', x=int, y=int, z=int)
-Block = NamedTuple('Block', position=Position, id=BlockId, meta=int, sky_light=int, block_light=int)
+Block = NamedTuple('Block', position=Position, id=BlockID, meta=int, sky_light=int, block_light=int)
 
 
 class Chunk:
@@ -20,12 +20,12 @@ class Chunk:
 
     position: Position
     blocks: list[Block]
-    biomes: list[BiomeId]
+    biomes: list[BiomeID]
     data_index: int
 
     __slots__ = ('position', 'blocks', 'biomes', 'data_index')
 
-    def __init__(self, position: Position, blocks: list[Block], biomes: list[BiomeId]):
+    def __init__(self, position: Position, blocks: list[Block], biomes: list[BiomeID]):
         self.position = position
         self.blocks = blocks
         self.biomes = biomes
@@ -34,7 +34,7 @@ class Chunk:
         return f'<Chunk position={self.position} blocks={len(self.blocks)}>'
 
     def __bytes__(self):
-        block_ids = b''.join(block.id.value.to_bytes(1, 'little') for block in self.blocks)
+        block_ids = b''.join(block.id.to_bytes(1, 'little') for block in self.blocks)
         meta = b''.join(
             (self.blocks[idx].meta << 4 | self.blocks[idx+1].meta).to_bytes(1, 'little')
             for idx in range(0, len(self.blocks), 2)
@@ -47,7 +47,7 @@ class Chunk:
             (self.blocks[idx].block_light << 4 | self.blocks[idx+1].block_light).to_bytes(1, 'little')
             for idx in range(0, len(self.blocks), 2)
         )
-        biomes = b''.join(biome.value.to_bytes(1, 'little') for biome in self.biomes)
+        biomes = b''.join(biome.to_bytes(1, 'little') for biome in self.biomes)
 
         data = b''.join([block_ids, meta, sky_light, block_light, biomes])
         header = len(data).to_bytes(4, 'little')
@@ -56,14 +56,14 @@ class Chunk:
         return header + data + padding
 
     @classmethod
-    def from_layered_template(cls, position: Position, layers: list[BlockId | None]):
-        def get_layer(idx: int) -> BlockId:
+    def from_layered_template(cls, position: Position, layers: list[BlockID | None]):
+        def get_layer(idx: int) -> BlockID:
             try:
                 block_id = layers[idx]
             except IndexError:
                 block_id = None
             if block_id is None:  # IndexError or None in layers
-                block_id = BlockId.AIR
+                block_id = BlockIDs.AIR
             return block_id
 
         return cls(
@@ -81,7 +81,7 @@ class Chunk:
                     block_light=0,
                 ) for idx in range(cls.X_SIZE * cls.Z_SIZE * cls.Y_SIZE)
             ],
-            biomes=[BiomeId.PLAINS] * cls.X_SIZE * cls.Z_SIZE,
+            biomes=[BiomeIDs.BID_0] * cls.X_SIZE * cls.Z_SIZE,
         )
 
     @classmethod
@@ -100,7 +100,7 @@ class Chunk:
         """Get block at position relative to chunk."""
         return self.blocks[self.position_to_index(relative_position)]
 
-    def set_block(self, relative_position: Position, block_id: BlockId, block_meta: int = None) -> None:
+    def set_block(self, relative_position: Position, block_id: BlockID, block_meta: int = None) -> None:
         """Set the block ID and meta of the block at position relative to chunk."""
         block = self.get_block(relative_position)
         block.id = block_id
@@ -239,7 +239,7 @@ class World:
                 for item
                 in sublist
             ]
-            block_biomes = [BiomeId(biome) for biome in chunk_data[int(block_size * 2.5):]]
+            block_biomes = [biome for biome in chunk_data[int(block_size * 2.5):]]
 
             chunk_position = cls.index_to_chunk_position(idx)
             blocks = [
@@ -249,7 +249,7 @@ class World:
                         y=idx % Chunk.Y_SIZE,
                         z=chunk_position.z * Chunk.Z_SIZE + (idx // Chunk.Y_SIZE) % Chunk.Z_SIZE,
                     ),
-                    id=BlockId(block_ids[idx]),
+                    id=block_ids[idx],
                     meta=block_meta[idx],
                     sky_light=block_sky_light[idx],
                     block_light=block_light[idx],
@@ -263,18 +263,24 @@ class World:
         with Path(path).open('wb') as f:
             f.write(bytes(self))
 
-    def get_block(self, absolute_position: Position) -> Block:
+    def get_block(self, absolute_block_position: Position) -> Block:
         """Get block relative to world."""
-        chunk_position, chunk_relative_block_position = self.global_to_chunk_position(position=absolute_position)
+        chunk_position, chunk_relative_block_position = self.global_to_chunk_position(position=absolute_block_position)
         return self.chunks[self.chunk_position_to_index(chunk_position)].get_block(
             relative_position=chunk_relative_block_position
         )
 
-    def set_block(self, absolute_position: Position, block_id: BlockId, block_meta: int = None) -> None:
-        pass
+    def set_block(self, absolute_block_position: Position, block_id: BlockID, block_meta: int = None) -> None:
+        chunk_position, chunk_relative_block_position = self.global_to_chunk_position(position=absolute_block_position)
+        block = self.chunks[self.chunk_position_to_index(chunk_position)].get_block(
+            relative_position=chunk_relative_block_position
+        )
+        block.id = block_id
+        if block_meta is not None:
+            block.meta = block_meta
 
-    def get_chunk(self, absolute_position: Position) -> Chunk:
-        pass
+    def get_chunk(self, absolute_chunk_position: Position) -> Chunk:
+        return self.chunks[self.chunk_position_to_index(absolute_chunk_position)]
 
-    def set_chunk(self, absolute_position: Position, chunk: Chunk) -> None:
-        pass
+    def set_chunk(self, absolute__chunk_position: Position, chunk: Chunk) -> None:
+        self.chunks[self.chunk_position_to_index(absolute__chunk_position)] = chunk

@@ -1,5 +1,5 @@
 from .chunks import Position, World, Chunk, EmptyChunk, Block
-from .ids import BlockId, BiomeId
+from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID
 
 __all__ = [
     'Position',
@@ -7,6 +7,8 @@ __all__ = [
     'Chunk',
     'EmptyChunk',
     'Block',
-    'BlockId',
-    'BiomeId'
+    'BlockIDs',
+    'BiomeIDs',
+    'BlockID',
+    'BiomeID'
 ]
