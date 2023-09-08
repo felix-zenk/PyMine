@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from math import ceil
+from math import ceil, sqrt
 from os import PathLike
 from pathlib import Path
 from typing import NamedTuple
@@ -13,22 +13,37 @@ Position = NamedTuple('Position', x=int, y=int, z=int)
 Block = NamedTuple('Block', position=Position, id=BlockID, meta=int, sky_light=int, block_light=int)
 
 
+def fill_with_empty_chunks(chunks: list[Chunk]) -> list[Chunk]:
+    chunks_per_direction = int(sqrt(len(chunks)))
+    return [
+        item for sublist
+        in (
+            (
+                *chunks[idx:idx+chunks_per_direction],
+                *[EmptyChunk()] * (World.MAX_CHUNKS_PER_DIRECTION - chunks_per_direction)
+            )
+            for idx
+            in range(0, len(chunks), chunks_per_direction)
+        )
+        for item in sublist
+    ] + [EmptyChunk()] * (World.MAX_CHUNKS_PER_DIRECTION - chunks_per_direction) * World.MAX_CHUNKS_PER_DIRECTION
+
+
 class Chunk:
     X_SIZE = 16
     Z_SIZE = 16
     Y_SIZE = 128
 
-    position: Position
     blocks: list[Block]
-    biomes: list[BiomeID]
-    data_index: int
+    biomes: list[BiomeID] | None
+    position: Position | None
 
-    __slots__ = ('position', 'blocks', 'biomes', 'data_index')
+    __slots__ = ('blocks', 'biomes', 'position')
 
-    def __init__(self, position: Position, blocks: list[Block], biomes: list[BiomeID]):
-        self.position = position
+    def __init__(self, blocks: list[Block], biomes: list[BiomeID] = None, position: Position = None):
         self.blocks = blocks
         self.biomes = biomes
+        self.position = position
 
     def __repr__(self):
         return f'<Chunk position={self.position} blocks={len(self.blocks)}>'
@@ -50,13 +65,13 @@ class Chunk:
         biomes = b''.join(biome.to_bytes(1, 'little') for biome in self.biomes)
 
         data = b''.join([block_ids, meta, sky_light, block_light, biomes])
-        header = len(data).to_bytes(4, 'little')
+        header = (len(data) + 4).to_bytes(4, 'little')
         chunk_len = len(header) + len(data)
         padding = b'\x00' * (ceil(chunk_len / World.CHUNK_BLOCK_SIZE) * World.CHUNK_BLOCK_SIZE - chunk_len)
         return header + data + padding
 
     @classmethod
-    def from_layered_template(cls, position: Position, layers: list[BlockID | None]):
+    def from_layered_template(cls, layers: list[BlockID | None], biomes: list[BiomeID] = None, position: Position = None):
         def get_layer(idx: int) -> BlockID:
             try:
                 block_id = layers[idx]
@@ -81,7 +96,7 @@ class Chunk:
                     block_light=0,
                 ) for idx in range(cls.X_SIZE * cls.Z_SIZE * cls.Y_SIZE)
             ],
-            biomes=[BiomeIDs.BID_0] * cls.X_SIZE * cls.Z_SIZE,
+            biomes=biomes or [BiomeIDs.BID_0] * cls.X_SIZE * cls.Z_SIZE,
         )
 
     @classmethod
@@ -110,7 +125,7 @@ class Chunk:
 
 class EmptyChunk(Chunk):
     def __init__(self):
-        super().__init__(None, [], [])  # type: ignore
+        super().__init__([], None, None)  # type: ignore
 
     def __bytes__(self):
         return b''
@@ -122,6 +137,9 @@ class World:
     MAX_CHUNKS_PER_DIRECTION = 32
 
     chunks: list[Chunk]
+
+    def __init__(self, chunks: list[Chunk]):
+        self.chunks = chunks if len(chunks) == self.MAX_CHUNKS_PER_DIRECTION ** 2 else fill_with_empty_chunks(chunks)
 
     def __repr__(self):
         empty_chunks = sum(1 for chunk in self.chunks if isinstance(chunk, EmptyChunk))
@@ -185,24 +203,24 @@ class World:
         logging.getLogger(__name__).debug(f'Found {len(chunk_headers)} chunk headers')
         for idx, chunk_header in enumerate(chunk_headers):
             logging.getLogger(__name__).debug(f'Processing chunk {idx} ...')
-            # reserved_block_sizes = chunk_header[0]  # How many chunk blocks of storage are reserved for this chunk
+            reserved_block_sizes = chunk_header[0]  # How many chunk blocks of storage are reserved for this chunk
             chunk_data_index = int.from_bytes(chunk_header[1:], 'little')
-            if chunk_data_index == 0:
-                logging.getLogger(__name__).debug(f'Found empty chunk at chunk index: {idx} ({chunk_data_index}/+0)')
+            if chunk_data_index == 0 and reserved_block_sizes == 0:
+                logging.getLogger(__name__).debug(f'Found empty chunk at chunk index: {idx} ({chunk_header})')
                 chunks.append(EmptyChunk())
                 continue
             chunk_data_offset = chunk_data_index * cls.CHUNK_BLOCK_SIZE
             logging.getLogger(__name__).debug(
-                f'Found non-empty chunk at chunk index: {idx} ({chunk_data_index}/+{chunk_data_offset})'
+                f'Found non-empty chunk at chunk index: {idx} ({chunk_header})'
             )
             chunk_header_block = data[chunk_data_offset:chunk_data_offset + 4]
             logging.getLogger(__name__).debug(f'Chunk header block: {chunk_header_block}')
-            if chunk_header_block == b'\x00\x00\x00\x00':
+            chunk_length = int.from_bytes(chunk_header_block, 'little')  # without padding
+            if chunk_length == 0:
                 logging.getLogger(__name__).error(f'MISTAKEN EMPTY CHUNK AT CHUNK INDEX: {idx} ({chunk_data_index})')
                 chunks.append(EmptyChunk())
                 continue
-            chunk_length = int.from_bytes(chunk_header_block, 'little')  # without padding
-            chunk_data = data[chunk_data_offset + 4:chunk_data_offset + chunk_length]  # truncate padding automatically
+            chunk_data = data[chunk_data_offset + 4:chunk_data_offset + chunk_length]
 
             block_size = Chunk.X_SIZE * Chunk.Z_SIZE * Chunk.Y_SIZE
             block_ids = chunk_data[:block_size]
@@ -256,7 +274,7 @@ class World:
                 )
                 for idx in range(block_size)
             ]
-            chunks.append(Chunk(position=chunk_position, blocks=blocks, biomes=block_biomes))
+            chunks.append(Chunk(blocks=blocks, biomes=block_biomes, position=chunk_position))
         return cls(chunks=chunks)
 
     def save(self, path: PathLike | str) -> None:
@@ -282,5 +300,6 @@ class World:
     def get_chunk(self, absolute_chunk_position: Position) -> Chunk:
         return self.chunks[self.chunk_position_to_index(absolute_chunk_position)]
 
-    def set_chunk(self, absolute__chunk_position: Position, chunk: Chunk) -> None:
-        self.chunks[self.chunk_position_to_index(absolute__chunk_position)] = chunk
+    def set_chunk(self, absolute_chunk_position: Position, chunk: Chunk) -> None:
+        chunk.position = absolute_chunk_position
+        self.chunks[self.chunk_position_to_index(absolute_chunk_position)] = chunk
