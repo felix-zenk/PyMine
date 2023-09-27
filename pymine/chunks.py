@@ -34,14 +34,14 @@ class Chunk:
     Z_SIZE = 16
     Y_SIZE = 128
 
-    _blocks: list[Block]
+    blocks: list[Block]
     biomes: list[BiomeID] | None
     position: Position | None
 
-    __slots__ = ('_blocks', 'biomes', 'position')
+    __slots__ = ('blocks', 'biomes', 'position')
 
     def __init__(self, blocks: list[Block], biomes: list[BiomeID] = None, position: Position = None):
-        self._blocks = blocks
+        self.blocks = blocks
         self.biomes = biomes
         self.position = position
 
@@ -71,11 +71,7 @@ class Chunk:
         return header + data + padding
 
     def __iter__(self) -> Iterable[Block]:
-        return iter(self._blocks)
-
-    @property
-    def blocks(self):
-        return self._blocks.copy()
+        return iter(self.blocks)
 
     @classmethod
     def from_layered_template(cls, layers: list[BlockID | None], biomes: list[BiomeID] = None, position: Position = None):
@@ -126,14 +122,14 @@ class Chunk:
         """Update an existing block at position relative to chunk."""
         if not 0 <= relative_position.x < self.X_SIZE or not 0 <= relative_position.y < self.Y_SIZE or not 0 <= relative_position.z < self.Z_SIZE:
             raise ValueError(f'Position must be inside the chunk! {relative_position}')
-        block = self._blocks[self.position_to_index(relative_position)]
+        block = self.blocks[self.position_to_index(relative_position)]
         block.id = block_id
         if block_meta is not None:
             block.meta = block_meta
 
     def replace_block(self, block: Block):
         """Replace the block at position relative to chunk."""
-        self._blocks[self.position_to_index(block.position)] = block
+        self.blocks[self.position_to_index(block.position)] = block
 
 
 class EmptyChunk(Chunk):
@@ -149,12 +145,12 @@ class World:
     CHUNK_BLOCK_SIZE = 4096
     MAX_CHUNKS_PER_DIRECTION = 32
 
-    _chunks: list[Chunk]
+    chunks: list[Chunk]
 
-    __slots__ = ('_chunks', )
+    __slots__ = ('chunks', )
 
     def __init__(self, chunks: list[Chunk]):
-        self._chunks = chunks if len(chunks) == self.MAX_CHUNKS_PER_DIRECTION ** 2 else fill_with_empty_chunks(chunks)
+        self.chunks = chunks if len(chunks) == self.MAX_CHUNKS_PER_DIRECTION ** 2 else fill_with_empty_chunks(chunks)
 
     def __repr__(self):
         empty_chunks = sum(1 for chunk in self.chunks if isinstance(chunk, EmptyChunk))
@@ -180,10 +176,6 @@ class World:
 
     def __iter__(self) -> Iterable[Chunk]:
         return iter(self.non_empty_chunks)
-
-    @property
-    def chunks(self):
-        return self._chunks.copy()
 
     def iter_blocks(self) -> Iterable[Block]:
         return iter(block for chunk in self for block in chunk)
@@ -329,11 +321,11 @@ class World:
 
     def replace_block(self, block: Block):
         chunk_position, chunk_relative_block_position = self.global_to_chunk_position(position=block.position)
-        self._chunks[self.chunk_position_to_index(chunk_position)].replace_block(block)
+        self.chunks[self.chunk_position_to_index(chunk_position)].replace_block(block)
 
     def get_chunk(self, absolute_chunk_position: Position) -> Chunk:
         return self.chunks[self.chunk_position_to_index(absolute_chunk_position)]
 
     def set_chunk(self, absolute_chunk_position: Position, chunk: Chunk) -> None:
         chunk.position = absolute_chunk_position
-        self._chunks[self.chunk_position_to_index(absolute_chunk_position)] = chunk
+        self.chunks[self.chunk_position_to_index(absolute_chunk_position)] = chunk
