@@ -7,10 +7,11 @@ from os import PathLike
 from pathlib import Path
 from typing import NamedTuple, Iterable
 
-from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID
+from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID, TRANSPARENT_BLOCKS
 
 Position = NamedTuple('Position', x=int, y=int, z=int)
 Block = NamedTuple('Block', position=Position, id=BlockID, meta=int, sky_light=int, block_light=int)
+Block.is_transparent = property(lambda self: self.id in TRANSPARENT_BLOCKS)
 
 
 def fill_with_empty_chunks(chunks: list[Chunk]) -> list[Chunk]:
@@ -30,13 +31,27 @@ def fill_with_empty_chunks(chunks: list[Chunk]) -> list[Chunk]:
 
 
 class Chunk:
+    """
+    A chunk is a 16x16x128 area of blocks.
+    """
+
     X_SIZE = 16
+    """The size of the chunk in the x direction (north-south)."""
+
     Z_SIZE = 16
+    """The size of the chunk in the z direction (east-west)."""
+
     Y_SIZE = 128
+    """The size of the chunk in the y direction (height)."""
 
     blocks: list[Block]
+    """A list of all blocks in the chunk."""
+
     biomes: list[BiomeID] | None
+    """A list of all biomes in the chunk."""
+
     position: Position | None
+    """The position of the chunk in the world."""
 
     __slots__ = ('blocks', 'biomes', 'position')
 
@@ -74,7 +89,15 @@ class Chunk:
         return iter(self.blocks)
 
     @classmethod
-    def from_layered_template(cls, layers: list[BlockID | None], biomes: list[BiomeID] = None, position: Position = None):
+    def from_layered_template(
+            cls, layers: list[BlockID | None], biomes: list[BiomeID] = None, position: Position = None
+    ) -> Chunk:
+        """
+        Create a chunk from a list of block ids.
+        Each list item (Block ID) represents a layer of the chunk.
+        Remaining space is filled with air.
+        None == `BlockIDs.AIR` for convenience.
+        """
         def get_layer(idx: int) -> BlockID:
             try:
                 block_id = layers[idx]
@@ -89,7 +112,8 @@ class Chunk:
                 id=get_layer(idx % cls.Y_SIZE),
                 position=cls.index_to_block_position(idx),
                 meta=0,
-                sky_light=0,  # 15 if idx % cls.Y_SIZE + 1 != cls.Y_SIZE and get_layer(idx % cls.Y_SIZE + 1) == BlockIDs.AIR else 0,
+                # 15 if idx % cls.Y_SIZE + 1 != cls.Y_SIZE and get_layer(idx % cls.Y_SIZE + 1) == BlockIDs.AIR else 0,
+                sky_light=0,
                 block_light=0,
             ) for idx in range(cls.X_SIZE * cls.Z_SIZE * cls.Y_SIZE)
         ]
@@ -114,13 +138,21 @@ class Chunk:
 
     def get_block(self, relative_position: Position) -> Block:
         """Get block at position relative to chunk."""
-        if not 0 <= relative_position.x < self.X_SIZE or not 0 <= relative_position.y < self.Y_SIZE or not 0 <= relative_position.z < self.Z_SIZE:
+        if not all((
+                0 <= relative_position.x < self.X_SIZE,
+                0 <= relative_position.y < self.Y_SIZE,
+                0 <= relative_position.z < self.Z_SIZE
+        )):
             raise ValueError(f'Position must be inside the chunk! {relative_position}')
         return self.blocks[self.position_to_index(relative_position)]
 
     def update_block(self, relative_position: Position, block_id: BlockID, block_meta: int = None) -> None:
         """Update an existing block at position relative to chunk."""
-        if not 0 <= relative_position.x < self.X_SIZE or not 0 <= relative_position.y < self.Y_SIZE or not 0 <= relative_position.z < self.Z_SIZE:
+        if not all((
+                0 <= relative_position.x < self.X_SIZE,
+                0 <= relative_position.y < self.Y_SIZE,
+                0 <= relative_position.z < self.Z_SIZE
+        )):
             raise ValueError(f'Position must be inside the chunk! {relative_position}')
         block = self.blocks[self.position_to_index(relative_position)]
         block.id = block_id
@@ -298,6 +330,7 @@ class World:
                 for block_idx in range(block_size)
             ]
             chunks.append(Chunk(blocks=blocks, biomes=block_biomes, position=chunk_position))
+        logging.getLogger(__name__).debug(f'Loaded {len(chunks)} chunks')
         return cls(chunks=chunks)
 
     def save(self, path: PathLike | str) -> None:
