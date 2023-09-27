@@ -221,9 +221,9 @@ class World:
     @classmethod
     def index_to_chunk_position(cls, idx: int) -> Position:
         return Position(
-            x=idx // cls.MAX_CHUNKS_PER_DIRECTION,
+            x=idx % cls.MAX_CHUNKS_PER_DIRECTION,
             y=0,
-            z=idx % cls.MAX_CHUNKS_PER_DIRECTION
+            z=idx // cls.MAX_CHUNKS_PER_DIRECTION
         )
 
     @classmethod
