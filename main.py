@@ -1,36 +1,40 @@
 import logging
+from math import log
+from pathlib import Path
 
-from pymine import Position, World, Chunk, Block, BlockIDs, BlockID
+import numpy as np
+from PIL import Image
+
+from pymine import Position, World, Chunk, Block, BlockIDs, BlockID, EmptyChunk
 
 
 def main():
+    print('Loading world')
     world = World.load('world/chunks.dat')
+    print('World loaded')
 
-    """
-    layers: list[BlockID] = [
-        BlockIDs.BEDROCK,
-        *[BlockIDs.DIRT] * 2,
-        BlockIDs.GRASS_BLOCK,
-        *[BlockIDs.AIR] * (Chunk.Y_SIZE - 4),
-    ]
-
-    chunk = world.get_chunk(absolute_position=Position(x=0, y=0, z=0))
-    new_chunk = Chunk.from_layered_template(Position(x=0, y=0, z=0), layers=layers)
-    world.set_chunk(absolute_position=Position(x=0, y=0, z=0), chunk=new_chunk)
-    chunk.get_block(relative_position=Position(x=0, y=0, z=0))
-    chunk.set_block(
-        relative_position=Position(x=0, y=0, z=0),
-        block_id=BlockIDs.BEDROCK
+    # Create a top-down image of the world
+    img = Image.new(
+        'RGB',
+        (world.chunks_per_direction * Chunk.X_SIZE, world.chunks_per_direction * Chunk.Z_SIZE)
     )
-    world.set_block(
-        absolute_position=Position(x=0, y=0, z=0),
-        block_id=BlockIDs.BEDROCK
-    )
-    """
+    for chunk in world:
+        for block in chunk:
+            if block.id == BlockIDs.AIR:
+                continue
+            print(block.position)
+            img.putpixel(
+                (block.position.x, block.position.z),
+                (block.position.y, block.position.y, block.position.y)
+            )
 
-    world.save('chunks.dat')
+    images = Path('img')
+    images.mkdir(exist_ok=True)
+    img.save(images / 'world.png')
 
-    World.load('chunks.dat')
+    # world.save('chunks.dat')
+    # print('EXPORTED')
+    # World.load('chunks.dat')
 
 
 if __name__ == '__main__':
