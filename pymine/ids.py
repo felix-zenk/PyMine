@@ -63,7 +63,7 @@ class BlockIDs(object):
     DIAMOND_ORE = 56
     DIAMOND_BLOCK = 57
     CRAFTING_TABLE = 58
-    CROPS_BLOCK = 59
+    WHEAT_SEEDS = 59
     FARMLAND = 60
     FURNACE = 61
     BURNING_FURNACE = 62
@@ -89,9 +89,9 @@ class BlockIDs(object):
     CLAY_BLOCK = 82
     SUGAR_CANE = 83
     BID_84 = 84
-    BID_85 = 85
+    FENCE = 85
     BID_86 = 86
-    BID_87 = 87
+    NETHERRACK = 87
     BID_88 = 88
     BID_89 = 89
     BID_90 = 90
@@ -100,23 +100,23 @@ class BlockIDs(object):
     BID_93 = 93
     BID_94 = 94
     BID_95 = 95
-    BID_96 = 96
+    TRAPDOOR = 96
     BID_97 = 97
-    BID_98 = 98
+    STONE_BRICKS = 98
     BID_99 = 99
     BID_100 = 100
-    BID_101 = 101
-    BID_102 = 102
+    IRON_BARS = 101
+    GLASS_PANE = 102
     BID_103 = 103
-    BID_104 = 104
-    BID_105 = 105
+    PUMPKIN_SEED = 104
+    MELON_SEED = 105
     BID_106 = 106
-    BID_107 = 107
+    FENCE_GATE = 107
     BID_108 = 108
     BID_109 = 109
     BID_110 = 110
     BID_111 = 111
-    BID_112 = 112
+    NETHER_BRICK = 112
     BID_113 = 113
     BID_114 = 114
     BID_115 = 115
@@ -145,8 +145,8 @@ class BlockIDs(object):
     BID_138 = 138
     BID_139 = 139
     BID_140 = 140
-    BID_141 = 141
-    BID_142 = 142
+    CARROT = 141
+    POTATO = 142
     BID_143 = 143
     BID_144 = 144
     BID_145 = 145
@@ -173,8 +173,8 @@ class BlockIDs(object):
     BID_167 = 167
     BID_168 = 168
     BID_169 = 169
-    BID_170 = 170
-    BID_171 = 171
+    HAY_BALE = 170
+    CARPET = 171
     BID_172 = 172
     BID_173 = 173
     BID_174 = 174
@@ -247,15 +247,26 @@ class BlockIDs(object):
     BID_241 = 241
     BID_242 = 242
     BID_243 = 243
-    BID_244 = 244
-    BID_245 = 245
+    BEET_ROOT = 244
+    STONECUTTER = 245
     BID_246 = 246
-    BID_247 = 247
+    NEATHER_REATCOR_CORE = 247
     BID_248 = 248
     BID_249 = 249
     BID_253 = 253
     BID_254 = 254
     BID_255 = 255
+
+
+TRANSPARENT_BLOCKS = {
+    BlockIDs.AIR,
+    BlockIDs.WATER,
+    BlockIDs.WATER_SOURCE,
+    BlockIDs.LAVA,
+    BlockIDs.LAVA_SOURCE,
+    BlockIDs.GLASS,
+    BlockIDs.LEAVES,
+}
 
 
 class BiomeIDs(object):
