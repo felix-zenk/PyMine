@@ -109,7 +109,7 @@ class Chunk:
         return Position(
             x=index // cls.X_SIZE // cls.Y_SIZE,
             y=index % cls.Y_SIZE,
-            z=index // cls.Y_SIZE % cls.Y_SIZE,
+            z=index // cls.Y_SIZE % cls.Z_SIZE,
         )
 
     @classmethod
