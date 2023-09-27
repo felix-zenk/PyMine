@@ -38,7 +38,7 @@ class Chunk:
     biomes: list[BiomeID] | None
     position: Position | None
 
-    __slots__ = ('blocks', 'biomes', 'position')
+    __slots__ = ('_blocks', 'biomes', 'position')
 
     def __init__(self, blocks: list[Block], biomes: list[BiomeID] = None, position: Position = None):
         self._blocks = blocks
@@ -107,9 +107,9 @@ class Chunk:
     @classmethod
     def index_to_block_position(cls, index: int) -> Position:
         return Position(
-            x=index % cls.X_SIZE,
-            y=index // cls.X_SIZE % cls.Y_SIZE,
-            z=index // cls.X_SIZE // cls.Y_SIZE,
+            x=index // cls.X_SIZE // cls.Y_SIZE,
+            y=index % cls.Y_SIZE,
+            z=index // cls.Y_SIZE % cls.Y_SIZE,
         )
 
     @classmethod
@@ -146,6 +146,8 @@ class World:
     MAX_CHUNKS_PER_DIRECTION = 32
 
     _chunks: list[Chunk]
+
+    __slots__ = ('_chunks', )
 
     def __init__(self, chunks: list[Chunk]):
         self._chunks = chunks if len(chunks) == self.MAX_CHUNKS_PER_DIRECTION ** 2 else fill_with_empty_chunks(chunks)
