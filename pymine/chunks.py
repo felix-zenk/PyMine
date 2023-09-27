@@ -241,30 +241,20 @@ class World:
         with path.open('rb') as f:
             data = f.read()
 
-        logging.getLogger(__name__).debug(f'Chunk block size: {cls.CHUNK_BLOCK_SIZE}')
         chunks = []
         chunk_index = data[:cls.CHUNK_BLOCK_SIZE]
         chunk_headers = [chunk_index[i:i + 4] for i in range(0, len(chunk_index), 4)]
-        logging.getLogger(__name__).debug(f'Found {len(chunk_headers)} chunk headers')
         for idx, chunk_header in enumerate(chunk_headers):
-            logging.getLogger(__name__).debug(f'Processing chunk {idx} ...')
             reserved_block_sizes = chunk_header[0]  # How many chunk blocks of storage are reserved for this chunk
             chunk_data_index = int.from_bytes(chunk_header[1:], 'little')
             if chunk_data_index == 0 and reserved_block_sizes == 0:
-                logging.getLogger(__name__).debug(f'Found empty chunk at chunk index: {idx} ({chunk_header})')
                 chunks.append(EmptyChunk())
                 continue
             chunk_data_offset = chunk_data_index * cls.CHUNK_BLOCK_SIZE
-            logging.getLogger(__name__).debug(
-                f'Found non-empty chunk at chunk index: {idx} ({chunk_header})'
-            )
             chunk_header_block = data[chunk_data_offset:chunk_data_offset + 4]
-            logging.getLogger(__name__).debug(f'Chunk header block: {chunk_header_block}')
             chunk_length = int.from_bytes(chunk_header_block, 'little')  # without padding
             if chunk_length == 0:
-                logging.getLogger(__name__).error(f'MISTAKEN EMPTY CHUNK AT CHUNK INDEX: {idx} ({chunk_data_index})')
-                chunks.append(EmptyChunk())
-                continue
+                raise ValueError(f'Chunk {idx} is empty!')
             chunk_data = data[chunk_data_offset + 4:chunk_data_offset + chunk_length]
 
             block_size = Chunk.X_SIZE * Chunk.Z_SIZE * Chunk.Y_SIZE
@@ -329,18 +319,21 @@ class World:
             relative_position=chunk_relative_block_position
         )
 
-    def set_block(self, absolute_block_position: Position, block_id: BlockID, block_meta: int = None) -> None:
+    def update_block(self, absolute_block_position: Position, block_id: BlockID, block_meta: int = None) -> None:
         chunk_position, chunk_relative_block_position = self.global_to_chunk_position(position=absolute_block_position)
-        block = self.chunks[self.chunk_position_to_index(chunk_position)].get_block(
-            relative_position=chunk_relative_block_position
+        self.chunks[self.chunk_position_to_index(chunk_position)].update_block(
+            relative_position=chunk_relative_block_position,
+            block_id=block_id,
+            block_meta=block_meta
         )
-        block.id = block_id
-        if block_meta is not None:
-            block.meta = block_meta
+
+    def replace_block(self, block: Block):
+        chunk_position, chunk_relative_block_position = self.global_to_chunk_position(position=block.position)
+        self._chunks[self.chunk_position_to_index(chunk_position)].replace_block(block)
 
     def get_chunk(self, absolute_chunk_position: Position) -> Chunk:
         return self.chunks[self.chunk_position_to_index(absolute_chunk_position)]
 
     def set_chunk(self, absolute_chunk_position: Position, chunk: Chunk) -> None:
         chunk.position = absolute_chunk_position
-        self.chunks[self.chunk_position_to_index(absolute_chunk_position)] = chunk
+        self._chunks[self.chunk_position_to_index(absolute_chunk_position)] = chunk
