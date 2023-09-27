@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from math import ceil, sqrt
 from os import PathLike
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, Iterable
 
 from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID
 
@@ -70,6 +70,9 @@ class Chunk:
         padding = b'\x00' * (ceil(chunk_len / World.CHUNK_BLOCK_SIZE) * World.CHUNK_BLOCK_SIZE - chunk_len)
         return header + data + padding
 
+    def __iter__(self) -> Iterable[Block]:
+        return iter(self.blocks)
+
     @classmethod
     def from_layered_template(cls, layers: list[BlockID | None], biomes: list[BiomeID] = None, position: Position = None):
         def get_layer(idx: int) -> BlockID:
@@ -81,22 +84,24 @@ class Chunk:
                 block_id = BlockIDs.AIR
             return block_id
 
+        blocks = [
+            Block(
+                id=get_layer(idx % cls.Y_SIZE),
+                position=Position(
+                    x=(idx // cls.Y_SIZE) // cls.Z_SIZE,
+                    y=idx % cls.Y_SIZE,
+                    z=(idx // cls.Y_SIZE) % cls.Z_SIZE,
+                ),
+                meta=0,
+                sky_light=0,  # 15 if idx % cls.Y_SIZE + 1 != cls.Y_SIZE and get_layer(idx % cls.Y_SIZE + 1) == BlockIDs.AIR else 0,
+                block_light=0,
+            ) for idx in range(cls.X_SIZE * cls.Z_SIZE * cls.Y_SIZE)
+        ]
+
         return cls(
-            position=position,
-            blocks=[
-                Block(
-                    id=get_layer(idx % cls.Y_SIZE),
-                    position=Position(
-                        x=(idx // cls.Y_SIZE) // cls.Z_SIZE,
-                        y=idx % cls.Y_SIZE,
-                        z=(idx // cls.Y_SIZE) % cls.Z_SIZE,
-                    ),
-                    meta=0,
-                    sky_light=0,
-                    block_light=0,
-                ) for idx in range(cls.X_SIZE * cls.Z_SIZE * cls.Y_SIZE)
-            ],
+            blocks=blocks,
             biomes=biomes or [BiomeIDs.BID_0] * cls.X_SIZE * cls.Z_SIZE,
+            position=position
         )
 
     @classmethod
@@ -113,10 +118,14 @@ class Chunk:
 
     def get_block(self, relative_position: Position) -> Block:
         """Get block at position relative to chunk."""
+        if not 0 <= relative_position.x <= self.X_SIZE or not 0 <= relative_position.y <= self.Y_SIZE or not 0 <= relative_position.z <= self.Z_SIZE:
+            raise ValueError(f'Position must be inside the chunk! {relative_position}')
         return self.blocks[self.position_to_index(relative_position)]
 
     def set_block(self, relative_position: Position, block_id: BlockID, block_meta: int = None) -> None:
         """Set the block ID and meta of the block at position relative to chunk."""
+        if not 0 <= relative_position.x <= self.X_SIZE or not 0 <= relative_position.y <= self.Y_SIZE or not 0 <= relative_position.z <= self.Z_SIZE:
+            raise ValueError(f'Position must be inside the chunk! {relative_position}')
         block = self.get_block(relative_position)
         block.id = block_id
         if block_meta is not None:
@@ -163,6 +172,9 @@ class World:
 
         return chunk_index + chunk_data
 
+    def __iter__(self) -> Iterable[Chunk]:
+        return iter(self.non_empty_chunks)
+
     @property
     def non_empty_chunks(self):
         return list(filter(lambda chunk: not isinstance(chunk, EmptyChunk), self.chunks))
@@ -170,6 +182,10 @@ class World:
     @property
     def empty_chunks(self):
         return list(filter(lambda chunk: isinstance(chunk, EmptyChunk), self.chunks))
+
+    @property
+    def chunks_per_direction(self) -> int:
+        return int(sqrt(len(self.non_empty_chunks)))
 
     @staticmethod
     def global_to_chunk_position(position: Position) -> tuple[Position, Position]:
@@ -184,6 +200,14 @@ class World:
             z=position.z % Chunk.Z_SIZE,
         )
         return chunk_position, chunk_relative_block_position
+
+    @classmethod
+    def chunk_to_global_position(cls, chunk_position: Position, relative_block_position: Position) -> Position:
+        return Position(
+            x=chunk_position.x * Chunk.X_SIZE + relative_block_position.x,
+            y=relative_block_position.y,
+            z=chunk_position.z * Chunk.Z_SIZE + relative_block_position.z
+        )
 
     @classmethod
     def index_to_chunk_position(cls, idx: int) -> Position:
@@ -270,17 +294,13 @@ class World:
             chunk_position = cls.index_to_chunk_position(idx)
             blocks = [
                 Block(
-                    position=Position(
-                        x=chunk_position.x * Chunk.X_SIZE + (idx // Chunk.Y_SIZE) // Chunk.Z_SIZE,
-                        y=idx % Chunk.Y_SIZE,
-                        z=chunk_position.z * Chunk.Z_SIZE + (idx // Chunk.Y_SIZE) % Chunk.Z_SIZE,
-                    ),
-                    id=block_ids[idx],
-                    meta=block_meta[idx],
-                    sky_light=block_sky_light[idx],
-                    block_light=block_light[idx],
+                    position=cls.chunk_to_global_position(chunk_position, Chunk.index_to_block_position(block_idx)),
+                    id=block_ids[block_idx],
+                    meta=block_meta[block_idx],
+                    sky_light=block_sky_light[block_idx],
+                    block_light=block_light[block_idx],
                 )
-                for idx in range(block_size)
+                for block_idx in range(block_size)
             ]
             chunks.append(Chunk(blocks=blocks, biomes=block_biomes, position=chunk_position))
         return cls(chunks=chunks)
