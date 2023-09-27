@@ -34,14 +34,14 @@ class Chunk:
     Z_SIZE = 16
     Y_SIZE = 128
 
-    blocks: list[Block]
+    _blocks: list[Block]
     biomes: list[BiomeID] | None
     position: Position | None
 
     __slots__ = ('blocks', 'biomes', 'position')
 
     def __init__(self, blocks: list[Block], biomes: list[BiomeID] = None, position: Position = None):
-        self.blocks = blocks
+        self._blocks = blocks
         self.biomes = biomes
         self.position = position
 
@@ -73,6 +73,10 @@ class Chunk:
     def __iter__(self) -> Iterable[Block]:
         return iter(self.blocks)
 
+    @property
+    def blocks(self):
+        return self._blocks.copy()
+
     @classmethod
     def from_layered_template(cls, layers: list[BlockID | None], biomes: list[BiomeID] = None, position: Position = None):
         def get_layer(idx: int) -> BlockID:
@@ -87,11 +91,7 @@ class Chunk:
         blocks = [
             Block(
                 id=get_layer(idx % cls.Y_SIZE),
-                position=Position(
-                    x=(idx // cls.Y_SIZE) // cls.Z_SIZE,
-                    y=idx % cls.Y_SIZE,
-                    z=(idx // cls.Y_SIZE) % cls.Z_SIZE,
-                ),
+                position=cls.index_to_block_position(idx),
                 meta=0,
                 sky_light=0,  # 15 if idx % cls.Y_SIZE + 1 != cls.Y_SIZE and get_layer(idx % cls.Y_SIZE + 1) == BlockIDs.AIR else 0,
                 block_light=0,
@@ -107,9 +107,9 @@ class Chunk:
     @classmethod
     def index_to_block_position(cls, index: int) -> Position:
         return Position(
-            x=(index // cls.Y_SIZE) // cls.Z_SIZE,
-            y=index % cls.Y_SIZE,
-            z=(index // cls.Y_SIZE) % cls.Z_SIZE,
+            x=index % cls.X_SIZE,
+            y=index // cls.X_SIZE % cls.Y_SIZE,
+            z=index // cls.X_SIZE // cls.Y_SIZE,
         )
 
     @classmethod
@@ -118,7 +118,7 @@ class Chunk:
 
     def get_block(self, relative_position: Position) -> Block:
         """Get block at position relative to chunk."""
-        if not 0 <= relative_position.x <= self.X_SIZE or not 0 <= relative_position.y <= self.Y_SIZE or not 0 <= relative_position.z <= self.Z_SIZE:
+        if not 0 <= relative_position.x < self.X_SIZE or not 0 <= relative_position.y < self.Y_SIZE or not 0 <= relative_position.z < self.Z_SIZE:
             raise ValueError(f'Position must be inside the chunk! {relative_position}')
         return self.blocks[self.position_to_index(relative_position)]
 
@@ -145,10 +145,10 @@ class World:
     CHUNK_BLOCK_SIZE = 4096
     MAX_CHUNKS_PER_DIRECTION = 32
 
-    chunks: list[Chunk]
+    _chunks: list[Chunk]
 
     def __init__(self, chunks: list[Chunk]):
-        self.chunks = chunks if len(chunks) == self.MAX_CHUNKS_PER_DIRECTION ** 2 else fill_with_empty_chunks(chunks)
+        self._chunks = chunks if len(chunks) == self.MAX_CHUNKS_PER_DIRECTION ** 2 else fill_with_empty_chunks(chunks)
 
     def __repr__(self):
         empty_chunks = sum(1 for chunk in self.chunks if isinstance(chunk, EmptyChunk))
@@ -174,6 +174,13 @@ class World:
 
     def __iter__(self) -> Iterable[Chunk]:
         return iter(self.non_empty_chunks)
+
+    @property
+    def chunks(self):
+        return self._chunks.copy()
+
+    def iter_blocks(self) -> Iterable[Block]:
+        return iter(block for chunk in self for block in chunk)
 
     @property
     def non_empty_chunks(self):
