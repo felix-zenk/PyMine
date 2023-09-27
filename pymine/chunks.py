@@ -71,7 +71,7 @@ class Chunk:
         return header + data + padding
 
     def __iter__(self) -> Iterable[Block]:
-        return iter(self.blocks)
+        return iter(self._blocks)
 
     @property
     def blocks(self):
@@ -122,14 +122,18 @@ class Chunk:
             raise ValueError(f'Position must be inside the chunk! {relative_position}')
         return self.blocks[self.position_to_index(relative_position)]
 
-    def set_block(self, relative_position: Position, block_id: BlockID, block_meta: int = None) -> None:
-        """Set the block ID and meta of the block at position relative to chunk."""
-        if not 0 <= relative_position.x <= self.X_SIZE or not 0 <= relative_position.y <= self.Y_SIZE or not 0 <= relative_position.z <= self.Z_SIZE:
+    def update_block(self, relative_position: Position, block_id: BlockID, block_meta: int = None) -> None:
+        """Update an existing block at position relative to chunk."""
+        if not 0 <= relative_position.x < self.X_SIZE or not 0 <= relative_position.y < self.Y_SIZE or not 0 <= relative_position.z < self.Z_SIZE:
             raise ValueError(f'Position must be inside the chunk! {relative_position}')
-        block = self.get_block(relative_position)
+        block = self._blocks[self.position_to_index(relative_position)]
         block.id = block_id
         if block_meta is not None:
             block.meta = block_meta
+
+    def replace_block(self, block: Block):
+        """Replace the block at position relative to chunk."""
+        self._blocks[self.position_to_index(block.position)] = block
 
 
 class EmptyChunk(Chunk):
