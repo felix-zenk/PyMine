@@ -1,5 +1,6 @@
 BlockID = int
 BiomeID = int
+MetaColorID = int
 
 
 class BlockIDs(object):
@@ -274,3 +275,6 @@ class BiomeIDs(object):
     BID_120 = 120
     BID_128 = 128
 
+
+class MetaColorIDs(object):
+    WHITE = 0
