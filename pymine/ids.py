@@ -113,7 +113,7 @@ class BlockIDs(object):
     BID_106 = 106
     FENCE_GATE = 107
     BID_108 = 108
-    BID_109 = 109
+    STONE_STAIRS = 109
     BID_110 = 110
     BID_111 = 111
     NETHER_BRICK = 112
@@ -138,12 +138,12 @@ class BlockIDs(object):
     BID_131 = 131
     BID_132 = 132
     BID_133 = 133
-    BID_134 = 134
+    SPRUCE_STAIRS = 134
     BID_135 = 135
     BID_136 = 136
     BID_137 = 137
     BID_138 = 138
-    BID_139 = 139
+    COBBLESTONE_WALL = 139
     BID_140 = 140
     CARROT = 141
     POTATO = 142
@@ -162,7 +162,7 @@ class BlockIDs(object):
     BID_155 = 155
     BID_156 = 156
     BID_157 = 157
-    BID_158 = 158
+    WOODEN_SLAB = 158
     BID_159 = 159
     BID_160 = 160
     BID_161 = 161
@@ -266,6 +266,11 @@ TRANSPARENT_BLOCKS = {
     BlockIDs.LAVA_SOURCE,
     BlockIDs.GLASS,
     BlockIDs.LEAVES,
+    BlockIDs.TORCH,
+    BlockIDs.FENCE,
+    BlockIDs.FENCE_GATE,
+    BlockIDs.RAIL,
+    BlockIDs.POWERED_RAIL
 }
 
 
