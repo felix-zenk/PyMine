@@ -52,7 +52,7 @@ class BlockIDs(object):
     BRICK_BLOCK = 45
     TNT = 46
     BOOKSHELF = 47
-    MOSS_STONE_MOSSY_COBBLESTONE = 48
+    MOSSY_COBBLESTONE = 48
     OBSIDIAN = 49
     TORCH = 50
     FIRE = 51
@@ -262,15 +262,15 @@ TRANSPARENT_BLOCKS = {
     BlockIDs.AIR,
     BlockIDs.WATER,
     BlockIDs.WATER_SOURCE,
-    BlockIDs.LAVA,
-    BlockIDs.LAVA_SOURCE,
-    BlockIDs.GLASS,
     BlockIDs.LEAVES,
+    BlockIDs.GLASS,
+    BlockIDs.POWERED_RAIL,
+    BlockIDs.DEAD_SHRUB,
+    BlockIDs.BEAD_BUSH,
+    BlockIDs.RAIL,
     BlockIDs.TORCH,
     BlockIDs.FENCE,
     BlockIDs.FENCE_GATE,
-    BlockIDs.RAIL,
-    BlockIDs.POWERED_RAIL
 }
 
 
