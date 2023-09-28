@@ -243,9 +243,19 @@ class TextureMapper:
             return self._from_atlas_coord(12, 0)
         if block.id == BlockIDs.TORCH:
             if face == 'top':
-                return self._from_atlas_coord(18, 3).crop((7, 6, 9, 8))
+                view = self.INVISIBLE.copy()
+                view.paste(
+                    self._from_atlas_coord(18, 3).crop((7, 6, 9, 8)),
+                    (7, 6)
+                )
+                return view
             if face == 'bottom':
-                return self._from_atlas_coord(18, 3).crop((7, 8, 9, 10))
+                view = self.INVISIBLE.copy()
+                view.paste(
+                    self._from_atlas_coord(18, 3).crop((7, 8, 9, 10)),
+                    (7, 8)
+                )
+                return view
             return self._from_atlas_coord(18, 3)
         if block.id == BlockIDs.FIRE:
             return self.INVISIBLE
@@ -400,10 +410,13 @@ class TextureMapper:
     def _from_block(self, block: Block, face: Face) -> Image.Image:
         if block.is_transparent:
             if block.position.y > 0 and self.world is not None:
-                return Image.alpha_composite(
-                    self._from_block(self.world.get_block(block.position.down()), 'top'),
-                    self._map_texture(block, face)
-                )
+                try:
+                    return Image.alpha_composite(
+                        self._from_block(self.world.get_block(block.position.down()), 'top'),
+                        self._map_texture(block, face)
+                    )
+                except Exception as e:
+                    raise Exception(f'Error at block {block}') from e
             return self.INVISIBLE
         return self._map_texture(block, face)
 
