@@ -10,8 +10,18 @@ from typing import NamedTuple, Iterable
 from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID, TRANSPARENT_BLOCKS
 
 Position = NamedTuple('Position', x=int, y=int, z=int)
-Block = NamedTuple('Block', position=Position, id=BlockID, meta=int, sky_light=int, block_light=int)
-Block.is_transparent = property(lambda self: self.id in TRANSPARENT_BLOCKS)
+
+
+@dataclass
+class Block:
+    position: Position
+    id: BlockID
+    meta: int
+    sky_light: int
+    block_light: int
+
+    def is_transparent(self):
+        return self.id in TRANSPARENT_BLOCKS
 
 
 def fill_with_empty_chunks(chunks: list[Chunk]) -> list[Chunk]:
