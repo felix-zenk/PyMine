@@ -31,3 +31,12 @@ class Game(object):
         self.level.save(directory / 'level.dat')
         self.world.save(directory / 'chunks.dat')
         (directory / 'entities.dat').write_bytes(b'')
+
+    @classmethod
+    def new(cls, name: str):
+        logging.getLogger(__name__).info('Creating new game %s', name)
+        level = Level.new(name)
+        world = World.new()
+        entities = Entities.new()
+        logging.getLogger(__name__).info('Game created')
+        return cls(level=level, world=world, entities=entities)

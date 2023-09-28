@@ -62,6 +62,25 @@ class Block:
     def is_transparent(self):
         return self.id in TRANSPARENT_BLOCKS
 
+    @classmethod
+    def from_id(cls, block_id: BlockID) -> Block:  # TODO
+        return cls(
+            position=Position(x=0, y=0, z=0),
+            id=block_id,
+            meta=0,
+            sky_light=0,
+            block_light=0,
+        )
+
+    def update(self, position: Position = None, block_id: BlockID = None, meta: int = None, sky_light: int = None,
+               block_light: int = None) -> Block:
+        self.position = position or self.position
+        self.id = block_id or self.id
+        self.meta = meta or self.meta
+        self.sky_light = sky_light or self.sky_light
+        self.block_light = block_light or self.block_light
+        return self
+
 
 def fill_with_empty_chunks(chunks: list[Chunk]) -> list[Chunk]:
     chunks_per_direction = int(sqrt(len(chunks)))
@@ -412,3 +431,7 @@ class World:
     def set_chunk(self, absolute_chunk_position: Position, chunk: Chunk) -> None:
         chunk.position = absolute_chunk_position
         self.chunks[self.chunk_position_to_index(absolute_chunk_position)] = chunk
+
+    @classmethod
+    def new(cls) -> World:  # TODO
+        return cls(chunks=[EmptyChunk()])

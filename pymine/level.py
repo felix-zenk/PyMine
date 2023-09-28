@@ -24,3 +24,7 @@ class Level(object):
         path = Path(path)
         path.parent.mkdir(exist_ok=True)
         path.write_bytes(bytes(self))
+
+    @classmethod
+    def new(cls, name: str) -> Level:  # TODO
+        return Level(name)

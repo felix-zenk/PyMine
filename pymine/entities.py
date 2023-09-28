@@ -30,3 +30,7 @@ class Entities(object):
     def save(self, path: str | PathLike):
         return
         # Path(path).write_bytes(self.entities)
+
+    @classmethod
+    def new(cls):  # TODO
+        return Entities(entities=[])
