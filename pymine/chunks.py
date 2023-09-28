@@ -334,8 +334,9 @@ class World:
         return cls(chunks=chunks)
 
     def save(self, path: PathLike | str) -> None:
-        with Path(path).open('wb') as f:
-            f.write(bytes(self))
+        path = Path(path)
+        path.parent.mkdir(exist_ok=True)
+        path.write_bytes(bytes(self))
 
     def get_block(self, absolute_block_position: Position) -> Block:
         """Get block relative to world."""
