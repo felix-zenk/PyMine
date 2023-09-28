@@ -5,11 +5,49 @@ from dataclasses import dataclass
 from math import ceil, sqrt
 from os import PathLike
 from pathlib import Path
-from typing import NamedTuple, Iterable
+from typing import Iterable
 
 from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID, TRANSPARENT_BLOCKS
 
-Position = NamedTuple('Position', x=int, y=int, z=int)
+
+@dataclass
+class Position:
+    x: int
+    y: int
+    z: int
+
+    def down(self, number_of_blocks: int = 1) -> Position:
+        return Position(x=self.x, y=self.y - number_of_blocks, z=self.z)
+
+    def up(self, number_of_blocks: int = 1) -> Position:
+        return Position(x=self.x, y=self.y + number_of_blocks, z=self.z)
+
+    def north(self, number_of_blocks: int = 1) -> Position:
+        return Position(x=self.x - number_of_blocks, y=self.y, z=self.z)
+
+    def south(self, number_of_blocks: int = 1) -> Position:
+        return Position(x=self.x - number_of_blocks, y=self.y, z=self.z)
+
+    def east(self, number_of_blocks: int = 1) -> Position:
+        return Position(x=self.x, y=self.y, z=self.z - number_of_blocks)
+
+    def west(self, number_of_blocks: int = 1) -> Position:
+        return Position(x=self.x, y=self.y, z=self.z + number_of_blocks)
+
+    def __add__(self, other: Position) -> Position:
+        return Position(x=self.x + other.x, y=self.y + other.y, z=self.z + other.z)
+
+    def __sub__(self, other: Position) -> Position:
+        return Position(x=self.x - other.x, y=self.y - other.y, z=self.z - other.z)
+
+    def __mul__(self, scalar: int) -> Position:
+        return Position(x=self.x * scalar, y=self.y * scalar, z=self.z * scalar)
+
+    def __truediv__(self, scalar: int) -> Position:
+        return self // scalar
+
+    def __floordiv__(self, scalar: int) -> Position:
+        return Position(x=self.x // scalar, y=self.y // scalar, z=self.z // scalar)
 
 
 @dataclass
@@ -20,6 +58,7 @@ class Block:
     sky_light: int
     block_light: int
 
+    @property
     def is_transparent(self):
         return self.id in TRANSPARENT_BLOCKS
 
