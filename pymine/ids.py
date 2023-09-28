@@ -56,7 +56,7 @@ class BlockIDs(object):
     OBSIDIAN = 49
     TORCH = 50
     FIRE = 51
-    MONSTER_SPAWNER = 52
+    MOB_SPAWNER = 52
     WOODEN_STAIRS = 53
     CHEST = 54
     BID_55 = 55
@@ -68,14 +68,14 @@ class BlockIDs(object):
     FURNACE = 61
     BURNING_FURNACE = 62
     SIGN_POST = 63
-    WOODEN_DOOR_BLOCK = 64
+    WOODEN_DOOR = 64
     LADDER = 65
     RAIL = 66
     COBBLESTONE_STAIRS = 67
     WALL_SIGN = 68
     BID_69 = 69
     BID_70 = 70
-    IRON_DOOR_BLOCK = 71
+    IRON_DOOR = 71
     BID_72 = 72
     REDSTONE_ORE = 73
     GLOWING_REDSTONE_ORE = 74
@@ -294,3 +294,18 @@ class BiomeIDs(object):
 
 class MetaColorIDs(object):
     WHITE = 0
+    ORANGE = 1
+    MAGENTA = 2
+    LIGHT_BLUE = 3
+    YELLOW = 4
+    GREEN = 5
+    PINK = 6
+    GRAY = 7
+    LIGHT_GRAY = 8
+    CYAN = 9
+    PURPLE = 10
+    BLUE = 11
+    BROWN = 12
+    DARK_GREEN = 13
+    RED = 14
+    BLACK = 15
