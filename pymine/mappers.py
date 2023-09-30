@@ -1,3 +1,4 @@
+import logging
 from typing import Literal
 
 from PIL import Image
@@ -47,6 +48,7 @@ class TextureMapper:
     def _slab(self, block: Block, face: Face, view: Image.Image) -> Image.Image:
         if face in ('top', 'bottom'):
             return view
+        logging.getLogger(__name__).debug(block)  # TODO remove
 
         view.paste(
             Image.new(
@@ -62,6 +64,7 @@ class TextureMapper:
         if face in ('top', 'bottom', 'front', 'back'):
             return view
 
+        logging.getLogger(__name__).debug(block)  # TODO remove
         view.paste(
             Image.new(
                 'RGBA',
@@ -94,16 +97,19 @@ class TextureMapper:
                 return self._from_atlas_coord(3, 0)
             if face == 'bottom':
                 return self.bottom(Block.from_id(BlockIDs.DIRT))
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(1, 0) + block.meta)
         if block.id == BlockIDs.DIRT:
             return self._from_atlas_coord(21, 0)
         if block.id == BlockIDs.COBBLESTONE:
             return self._from_atlas_coord(5, 0)
         if block.id == BlockIDs.PLANK:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(22, 0) + block.meta)
         if block.id == BlockIDs.SAPLING:
             if face in ('top', 'bottom'):
                 return self.INVISIBLE
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(4, 1) + block.meta)
         if block.id == BlockIDs.BEDROCK:
             return self._from_atlas_coord(11, 0)
@@ -126,10 +132,12 @@ class TextureMapper:
         if block.id == BlockIDs.COAL_ORE:
             return self._from_atlas_coord(2, 2)
         if block.id == BlockIDs.LOG:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             if face in ('top', 'bottom'):
                 return self._from_atlas_index(self._coord_to_index(9, 1) + block.meta * 2)
             return self._from_atlas_index(self._coord_to_index(8, 1) + block.meta * 2)
         if block.id == BlockIDs.LEAVES:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(30, 2) + block.meta)
         if block.id == BlockIDs.SPONGE:
             return self._from_atlas_coord(24, 2)
@@ -142,6 +150,7 @@ class TextureMapper:
         if block.id == BlockIDs.BID_23:
             return self.DOES_NOT_EXIST
         if block.id == BlockIDs.SANDSTONE:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             if face == 'top':
                 return self._from_atlas_coord(18, 0)
             if face == 'bottom':
@@ -150,6 +159,7 @@ class TextureMapper:
         if block.id == BlockIDs.BID_25:
             return self.DOES_NOT_EXIST
         if block.id == BlockIDs.BED:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             if block.meta == 0:
                 if face == 'top':
                     return self._from_atlas_coord(5, 5)
@@ -196,6 +206,7 @@ class TextureMapper:
         if block.id == BlockIDs.BID_34:
             return self.DOES_NOT_EXIST
         if block.id == BlockIDs.WOOL:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(24, 7) + block.meta)
         if block.id == BlockIDs.BID_36:
             return self.DOES_NOT_EXIST
@@ -224,7 +235,14 @@ class TextureMapper:
                 return self._from_atlas_coord(26, 0)
             return self._from_atlas_coord(27, 0)
         if block.id == BlockIDs.STONE_SLAB:
-            return self._slab(block, face, self._from_atlas_index(self._coord_to_index(27, 0)))
+            return self._slab(
+                block, face,
+                (
+                    self._from_atlas_index(self._coord_to_index(26, 0))
+                    if face in ('top', 'bottom')
+                    else self._from_atlas_index(self._coord_to_index(27, 0))
+                )
+            )
         if block.id == BlockIDs.BRICK_BLOCK:
             return self._from_atlas_coord(28, 0)
         if block.id == BlockIDs.TNT:
@@ -290,6 +308,7 @@ class TextureMapper:
         if block.id == BlockIDs.WHEAT_SEEDS:
             return self.INVISIBLE
         if block.id == BlockIDs.FARMLAND:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             if face == 'top':
                 return self._from_atlas_index(self._coord_to_index(29, 3) - block.meta)
             if face == 'bottom':
@@ -315,6 +334,7 @@ class TextureMapper:
         if block.id == BlockIDs.LADDER:
             return self.INVISIBLE
         if block.id == BlockIDs.RAIL:  # TODO rotation
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(29, 4) + block.meta)
         if block.id == BlockIDs.COBBLESTONE_STAIRS:
             return self._stair(
@@ -368,11 +388,51 @@ class TextureMapper:
         if block.id == BlockIDs.FENCE:
             view = self.INVISIBLE.copy()
             view.paste(
-                self._from_block(Block.from_id(BlockIDs.PLANK), face=face).crop(
-                    (self.TEXTURE_SIZE // 2 - 2, self.TEXTURE_SIZE // - 2, self.TEXTURE_SIZE // 2 + 2, self.TEXTURE_SIZE // 2 + 2)
-                ),
+                self._from_block(Block.from_id(BlockIDs.PLANK), face=face).crop((
+                    self.TEXTURE_SIZE // 2 - 2,
+                    self.TEXTURE_SIZE // 2 - 2,
+                    self.TEXTURE_SIZE // 2 + 2,
+                    self.TEXTURE_SIZE // 2 + 2
+                )),
                 (self.TEXTURE_SIZE // 2 - 2, self.TEXTURE_SIZE // 2 - 2)
             )
+            if self.world is not None:
+                if self.world.possible_position(block.position.north()):
+                    north_block = self.world.get_block(block.position.north())
+                    if north_block.is_full_block or north_block.id == block.id:
+                        view.paste(
+                            self._from_block(Block.from_id(BlockIDs.PLANK), face=face).crop(
+                                (0, 0, 1, self.TEXTURE_SIZE // 2)
+                            ),
+                            (0, self.TEXTURE_SIZE // 2 - 1)
+                        )
+                if self.world.possible_position(block.position.south()):
+                    south_block = self.world.get_block(block.position.south())
+                    if south_block.is_full_block or south_block.id == block.id:
+                        view.paste(
+                            self._from_block(Block.from_id(BlockIDs.PLANK), face=face).crop(
+                                (0, self.TEXTURE_SIZE // 2, 1, self.TEXTURE_SIZE)
+                            ),
+                            (self.TEXTURE_SIZE // 2, self.TEXTURE_SIZE // 2 - 1)
+                        )
+                if self.world.possible_position(block.position.west()):
+                    west_block = self.world.get_block(block.position.west())
+                    if west_block.is_full_block or west_block.id == block.id:
+                        view.paste(
+                            self._from_block(Block.from_id(BlockIDs.PLANK), face=face).crop(
+                                (0, 0, self.TEXTURE_SIZE // 2, 1)
+                            ),
+                            (self.TEXTURE_SIZE // 2 - 1, 0)
+                        )
+                if self.world.possible_position(block.position.east()):
+                    east_block = self.world.get_block(block.position.east())
+                    if east_block.is_full_block or east_block.id == block.id:
+                        view.paste(
+                            self._from_block(Block.from_id(BlockIDs.PLANK), face=face).crop(
+                                (self.TEXTURE_SIZE // 2, 0, self.TEXTURE_SIZE, 1)
+                            ),
+                            (self.TEXTURE_SIZE // 2 - 1, self.TEXTURE_SIZE // 2)
+                        )
             return view
         if block.id == BlockIDs.BID_86:
             return self.DOES_NOT_EXIST
@@ -399,6 +459,7 @@ class TextureMapper:
         if block.id == BlockIDs.BID_97:
             return self.DOES_NOT_EXIST
         if block.id == BlockIDs.STONE_BRICKS:
+            logging.getLogger(__name__).debug(block)  # TODO remove
             return self._from_atlas_index(self._coord_to_index(7, 0) + block.meta)
         if block.id == BlockIDs.BID_99:
             return self.DOES_NOT_EXIST
