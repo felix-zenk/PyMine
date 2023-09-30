@@ -68,7 +68,10 @@ def top_down_view(world: World, image_path: str):
     image_path = Path(image_path)
     image_path.parent.mkdir(exist_ok=True)
     # Rotate image so that up is north
-    view.rotate(-90).save(image_path)
+    (view
+     # .rotate(-90)
+     .save(image_path)
+     )
     logging.info('Saved image to %s', image_path)
 
 
@@ -153,12 +156,12 @@ def block_id_map(world, image_path):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     digits_map = Image.open('placeholders/digits.png')
     game = Game.load('world')
     mapper = TextureMapper(world=game.world)
 
     # height_map(world=game.world, image_path='images/height_map.png')
-    top_down_view(world=game.world, image_path='images/top_down_view.png')
+    top_down_view(world=game.world, image_path=f'images/{game.level.name}_top_down_view.png')
     # create_flat_world(name='flat_world')
     # block_id_map(world=game.world, image_path='images/block_id_map.png')
