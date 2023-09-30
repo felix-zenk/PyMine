@@ -7,7 +7,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Iterable
 
-from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID, TRANSPARENT_BLOCKS
+from .ids import BlockIDs, BiomeIDs, BlockID, BiomeID, TRANSPARENT_BLOCKS, FULL_BLOCKS
 
 
 @dataclass
@@ -61,6 +61,10 @@ class Block:
     @property
     def is_transparent(self):
         return self.id in TRANSPARENT_BLOCKS
+
+    @property
+    def is_full_block(self):
+        return self.id in FULL_BLOCKS
 
     @classmethod
     def from_id(cls, block_id: BlockID) -> Block:  # TODO
@@ -435,3 +439,10 @@ class World:
     @classmethod
     def new(cls) -> World:  # TODO
         return cls(chunks=[EmptyChunk()])
+
+    def possible_position(self, absolute_position: Position) -> bool:
+        return all((
+            0 <= absolute_position.x < Chunk.X_SIZE * self.chunks_per_direction,
+            0 <= absolute_position.y < Chunk.Y_SIZE,
+            0 <= absolute_position.z < Chunk.Z_SIZE * self.chunks_per_direction
+        ))

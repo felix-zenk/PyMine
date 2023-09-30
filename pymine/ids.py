@@ -273,6 +273,45 @@ TRANSPARENT_BLOCKS = {
     BlockIDs.FENCE_GATE,
 }
 
+FULL_BLOCKS = {
+    BlockIDs.STONE,
+    BlockIDs.GRASS_BLOCK,
+    BlockIDs.DIRT,
+    BlockIDs.COBBLESTONE,
+    BlockIDs.PLANK,
+    BlockIDs.BEDROCK,
+    BlockIDs.SAND,
+    BlockIDs.GRAVEL,
+    BlockIDs.GOLD_ORE,
+    BlockIDs.IRON_ORE,
+    BlockIDs.COAL_ORE,
+    BlockIDs.LOG,
+    BlockIDs.SPONGE,
+    BlockIDs.LAPIS_LAZULI_ORE,
+    BlockIDs.LAPIS_LAZULI_BLOCK,
+    BlockIDs.SANDSTONE,
+    BlockIDs.BOOKSHELF,
+    BlockIDs.MOSSY_COBBLESTONE,
+    BlockIDs.OBSIDIAN,
+    BlockIDs.FIRE,
+    BlockIDs.MOB_SPAWNER,
+    BlockIDs.WOODEN_STAIRS,
+    BlockIDs.DIAMOND_ORE,
+    BlockIDs.DIAMOND_BLOCK,
+    BlockIDs.CRAFTING_TABLE,
+    BlockIDs.FURNACE,
+    BlockIDs.BURNING_FURNACE,
+    BlockIDs.IRON_DOOR,
+    BlockIDs.REDSTONE_ORE,
+    BlockIDs.GLOWING_REDSTONE_ORE,
+    BlockIDs.ICE,
+    BlockIDs.SNOW_BLOCK,
+    BlockIDs.CLAY_BLOCK,
+    BlockIDs.NETHERRACK,
+    BlockIDs.NETHER_BRICK,
+    # TODO add
+}
+
 
 class BiomeIDs(object):
     BID_0 = 0
